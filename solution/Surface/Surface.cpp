@@ -10,7 +10,8 @@ int main()
     int H = 4;
 
     vector< string > rows
-    { "####",
+    { 
+        "####",
         "##O#",
         "#OO#",
         "####"
