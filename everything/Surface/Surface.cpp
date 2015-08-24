@@ -5,6 +5,13 @@
 
 using namespace std;
 
+class Node;
+class Coord;
+pair< Node, bool >
+getNode( Coord const& coord );
+bool
+isCoordWater( Coord const& coord );
+
 vector< string > rows
 {
     "####",
@@ -12,6 +19,8 @@ vector< string > rows
     "#OO#",
     "####"
 };
+
+vector< vector< Node > > nodes;
 
 class Coord
 {
@@ -27,13 +36,37 @@ class Node
 public:
     Node( Coord const& coord ) : _coord( coord ), _water( isCoordWater( coord ) ) {}
 
-    unique_ptr< Node > _left;
-    unique_ptr< Node > _right;
-    unique_ptr< Node > _top;
-    unique_ptr< Node > _bot;
+    int findLakeFromHere( Coord const& coord )
+    {
+        auto pair = getNode( coord );
+        if( pair.second && !pair.first._water )
+            return 0;
+
+        int lakeSurface = 0;
+        _analyzed = true;
+
+        pair = getNode( Coord( coord._X + 1, coord._Y ) );
+        if( pair.second && pair.first._water && !pair.first._analyzed )
+            lakeSurface += findLakeFromHere( pair.first._coord );
+
+        pair = getNode( Coord( coord._X - 1, coord._Y ) );
+        if( pair.second && pair.first._water && !pair.first._analyzed )
+            lakeSurface += findLakeFromHere( pair.first._coord );
+
+        pair = getNode( Coord( coord._X, coord._Y + 1) );
+        if( pair.second && pair.first._water && !pair.first._analyzed )
+            lakeSurface += findLakeFromHere( pair.first._coord );
+
+        pair = getNode( Coord( coord._X, coord._Y - 1 ) );
+        if( pair.second && pair.first._water && !pair.first._analyzed )
+            lakeSurface += findLakeFromHere( pair.first._coord );
+
+        return lakeSurface == 0 ? 1 : lakeSurface;
+    }
+
     Coord _coord;
-    bool _analyzed = false;
     bool _water;
+    bool _analyzed = false;
 };
 
 bool
@@ -42,40 +75,28 @@ isCoordWater( Coord const& coord )
     return rows[ coord._Y ][ coord._X ] == 'O';
 }
 
-vector< Node >
-findAdjacent( Node const& node )
+pair< Node, bool >
+getNode( Coord const& coord )
 {
-    auto adjacents = vector< Node >{};
-    return adjacents;
+    if( coord._Y < nodes.size() && coord._X < nodes[ coord._Y ].size() )
+        return make_pair( nodes[ coord._Y ][ coord._X ], true );
+    else
+        return make_pair( nodes[ 0 ][ 0 ], false );
 }
 
-bool
-analyze( Node const& node )
+void
+initNodes( int L, int H )
 {
-    bool endNode = false;
-    if( node._left->_water )
-
+    for( auto y = 0; y < H; ++y )
+    {
+        nodes.push_back( vector< Node >{} );
+        for( auto x = 0; x < L; ++x )
+            nodes[ y ].push_back( Node( Coord( x, y ) ) );
+    }
 }
 
 int
-findLakeSurface( Coord const& coord )
-{
-    auto node = Node( coord );
-    if( !node._water )
-        return 0;
-
-    auto adjacents = findAdjacent( node );
-
-    bool analyze = true;
-    while( analyze )
-    {
-
-    }
-
-    return 0;
-}
-
-int main()
+main()
 {
     int L = 4;
     int H = 4;
@@ -83,9 +104,10 @@ int main()
     int N = 3;
 
     auto coords = vector< Coord >{ { 0, 0 }, { 1, 2 }, { 2, 1 } };
+    initNodes( L, H );
 
     for( auto const& coord : coords )
-        cout << findLakeSurface( coord ) << endl;
+        cout << getNode( coord ).first.findLakeFromHere( coord ) << endl;
 
     return 0;
 }
