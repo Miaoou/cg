@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <fstream>
 #include <stack>
+#include <list>
 
 using namespace std;
 
@@ -46,34 +47,8 @@ public:
     Coord const _coord;
     bool _water = false;
     bool _analyzed = false;
+    bool _awaiting = false;
 };
-
-int
-findLakeFromHere( Node& node )
-{
-    node._analyzed = true;
-
-    if( !node._water )
-        return 0;
-
-    auto findLakeNeighbour = [] ( Coord&& coord ) -> uint8_t
-    {
-        if( coord._Y < nodes.size() && coord._X < nodes[ coord._Y ].size() )
-        {
-            auto& node = getNode( coord );
-            return ( node._water && !node._analyzed ) ? findLakeFromHere( node ) : 0;
-        }
-    };
-    
-    uint8_t lakeSurface = 0;
-
-    lakeSurface += findLakeNeighbour( Coord( node._coord._X + 1, node._coord._Y ) );
-    lakeSurface += findLakeNeighbour( Coord( node._coord._X - 1, node._coord._Y ) );
-    lakeSurface += findLakeNeighbour( Coord( node._coord._X, node._coord._Y + 1 ) );
-    lakeSurface += findLakeNeighbour( Coord( node._coord._X, node._coord._Y - 1 ) );
-
-    return ++lakeSurface;
-}
 
 bool
 isCoordWater( Coord const& coord )
@@ -104,8 +79,70 @@ resetNodes( int L, int H )
     for( auto y = 0; y < H; ++y )
     {
         for( auto x = 0; x < L; ++x )
+        {
             nodes[ y ][ x ]._analyzed = false;
+            nodes[ y ][ x ]._awaiting = false;
+        }
     }
+}
+
+bool
+checkBounds( Coord const& coord )
+{
+    return coord._Y < nodes.size() && coord._X < nodes[ coord._Y ].size();
+}
+
+list< Node* >
+findLakeFromHere( Node& node, uint64_t& surface )
+{
+    node._analyzed = true;
+    auto neighbours = list< Node* >{};
+
+    if( !node._water )
+        return neighbours;
+
+    ++surface;
+
+    auto findLakeNeighbour = [ &neighbours ] ( Coord&& coord )
+    {
+        if( checkBounds( coord ) )
+        {
+            auto& node = getNode( coord );
+            if( node._water && !node._analyzed && !node._awaiting )
+            {
+                node._awaiting = true;
+                neighbours.push_back( &node );
+            }
+        }
+    };
+    
+    findLakeNeighbour( Coord( node._coord._X + 1, node._coord._Y ) );
+    findLakeNeighbour( Coord( node._coord._X - 1, node._coord._Y ) );
+    findLakeNeighbour( Coord( node._coord._X, node._coord._Y + 1 ) );
+    findLakeNeighbour( Coord( node._coord._X, node._coord._Y - 1 ) );
+    
+    return neighbours;
+}
+
+uint64_t
+findLake( Coord const& coord )
+{
+    auto& root = getNode( coord );
+    list< Node* > toBeAnalyzed{ &root };
+    auto surface = uint64_t{ 0 };
+
+    while( !toBeAnalyzed.empty() )
+    {
+        auto node = toBeAnalyzed.front();
+        toBeAnalyzed.pop_front();
+
+        auto neighbours = findLakeFromHere( *node, surface );
+
+        for( auto neighbour : neighbours )
+            toBeAnalyzed.push_back( neighbour );
+    }
+
+    return surface;
 }
 
 int
@@ -134,7 +171,7 @@ main()
     for( auto const& coord : coords )
     {
         resetNodes( L, H );
-        cout << findLakeFromHere( getNode( coord ) ) << endl;
+        cout << findLake( coord ) << endl;
     }
 
     return 0;
