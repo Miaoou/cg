@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <fstream>
 #include <stack>
-#include <list>
+#include <deque>
 
 using namespace std;
 
@@ -22,23 +22,20 @@ vector< vector< Node > > nodes;
 class Coord
 {
 public:
-    Coord( uint8_t X, uint8_t Y ) : _X{ X }, _Y{ Y } {}
+    Coord( uint32_t X, uint32_t Y ) : _X{ X }, _Y{ Y } {}
     Coord& operator= ( Coord&& right ) = delete;
     Coord( Coord&& right ) : _X{ right._X }, _Y{ right._Y } {}
     Coord( Coord const& right ) = delete;
     Coord& operator= ( Coord const& right ) = delete;
 
-    uint8_t const _X;
-    uint8_t const _Y;
+    uint32_t const _X;
+    uint32_t const _Y;
 };
 
 class Node
 {
 public:
-    Node( uint8_t X, uint8_t Y ) : _coord( X, Y )
-    {
-        _water = isCoordWater( _coord );
-    }
+    Node( uint32_t X, uint32_t Y ) : _coord{ X, Y }, _water{ isCoordWater( _coord ) } {}
     Node& operator= ( Node&& right ) = delete;
     Node( Node&& right ) : _coord( right._coord._X, right._coord._Y ), _water( right._water ), _analyzed( right._analyzed ) {}
     Node() = delete;
@@ -65,9 +62,11 @@ getNode( Coord const& coord )
 void
 initNodes( int L, int H )
 {
+    nodes.reserve( H );
     for( auto y = 0; y < H; ++y )
     {
         nodes.emplace_back();
+        nodes.back().reserve( L );
         for( auto x = 0; x < L; ++x )
             nodes[ y ].emplace_back( x, y );
     }
@@ -92,18 +91,17 @@ checkBounds( Coord const& coord )
     return coord._Y < nodes.size() && coord._X < nodes[ coord._Y ].size();
 }
 
-list< Node* >
-findLakeFromHere( Node& node, uint64_t& surface )
+void
+findLakeFromHere( Node& node, uint32_t& surface, vector< Node* >& toBeAnalyzed )
 {
     node._analyzed = true;
-    auto neighbours = list< Node* >{};
 
     if( !node._water )
-        return neighbours;
+        return;
 
     ++surface;
 
-    auto findLakeNeighbour = [ &neighbours ] ( Coord&& coord )
+    auto findLakeNeighbour = [ &toBeAnalyzed ] ( Coord&& coord )
     {
         if( checkBounds( coord ) )
         {
@@ -111,7 +109,7 @@ findLakeFromHere( Node& node, uint64_t& surface )
             if( node._water && !node._analyzed && !node._awaiting )
             {
                 node._awaiting = true;
-                neighbours.push_back( &node );
+                toBeAnalyzed.push_back( &node );
             }
         }
     };
@@ -120,26 +118,25 @@ findLakeFromHere( Node& node, uint64_t& surface )
     findLakeNeighbour( Coord( node._coord._X - 1, node._coord._Y ) );
     findLakeNeighbour( Coord( node._coord._X, node._coord._Y + 1 ) );
     findLakeNeighbour( Coord( node._coord._X, node._coord._Y - 1 ) );
-    
-    return neighbours;
 }
 
-uint64_t
+uint32_t
 findLake( Coord const& coord )
 {
     auto& root = getNode( coord );
-    list< Node* > toBeAnalyzed{ &root };
-    auto surface = uint64_t{ 0 };
+    auto toBeAnalyzed = vector< Node* >{ &root };
+    toBeAnalyzed.reserve( 2000 );
 
-    while( !toBeAnalyzed.empty() )
+    auto surface = uint32_t{ 0 };
+    auto head = begin( toBeAnalyzed );
+
+    for( int index = 0; ; ++index )
     {
-        auto node = toBeAnalyzed.front();
-        toBeAnalyzed.pop_front();
+        head = begin( toBeAnalyzed ) + index;
+        if( head == end( toBeAnalyzed ) )
+            break;
 
-        auto neighbours = findLakeFromHere( *node, surface );
-
-        for( auto neighbour : neighbours )
-            toBeAnalyzed.push_back( neighbour );
+        findLakeFromHere( **head, surface, toBeAnalyzed );
     }
 
     return surface;
@@ -148,21 +145,25 @@ findLake( Coord const& coord )
 int
 main()
 {
-    int L = 900;
-    int H = 400;
-
-    ifstream ifs( "Test_9_input.txt" );
-    string row;
-    while(getline(ifs, row))
+    ifstream cin( "D:\\kobra-local\\github\\cg\\everything\\Surface\\Test_9_input.txt" );
+    int L;
+    cin >> L; cin.ignore();
+    int H;
+    cin >> H; cin.ignore();
+    for( int i = 0; i < H; i++ ) {
+        string row;
+        cin >> row; cin.ignore();
         rows.push_back( row );
-
-    int N = 1;
+    }
+    int N;
+    cin >> N; cin.ignore();
 
     vector< Coord > coords;
+    coords.reserve( N );
     for( int i = 0; i < N; i++ ) {
-        uint8_t X = 43;
-        uint8_t Y = 54;
-        
+        int X;
+        int Y;
+        cin >> X >> Y; cin.ignore();
         coords.emplace_back( X, Y );
     }
 
