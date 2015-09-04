@@ -18,6 +18,7 @@ bool checkBounds( Coord const& coord );
 
 vector< string > rows;
 vector< vector< Node > > nodes;
+vector< uint32_t > surfaceCache;
 
 class Coord
 {
@@ -37,7 +38,7 @@ class Node
 public:
     Node( uint32_t X, uint32_t Y ) : _coord{ X, Y }, _water{ isCoordWater( _coord ) } {}
     Node& operator= ( Node&& right ) = delete;
-    Node( Node&& right ) : _coord( right._coord._X, right._coord._Y ), _water( right._water ), _analyzed( right._analyzed ) {}
+    Node( Node&& right ) : _coord( right._coord._X, right._coord._Y ), _water( right._water ), _analyzed( right._analyzed ), _awaiting( right._awaiting ), _cacheIndex( right._cacheIndex ) {}
     Node() = delete;
     Node& operator= ( Node const& right ) = delete;
 
@@ -45,6 +46,7 @@ public:
     bool _water = false;
     bool _analyzed = false;
     bool _awaiting = false;
+    int32_t _cacheIndex = -1;
 };
 
 bool
@@ -72,19 +74,6 @@ initNodes( int L, int H )
     }
 }
 
-void
-resetNodes( int L, int H )
-{
-    for( auto y = 0; y < H; ++y )
-    {
-        for( auto x = 0; x < L; ++x )
-        {
-            nodes[ y ][ x ]._analyzed = false;
-            nodes[ y ][ x ]._awaiting = false;
-        }
-    }
-}
-
 bool
 checkBounds( Coord const& coord )
 {
@@ -92,16 +81,13 @@ checkBounds( Coord const& coord )
 }
 
 void
-findLakeFromHere( Node& node, uint32_t& surface, vector< Node* >& toBeAnalyzed )
+findLakeAroundNode( Node& node, int32_t cacheIndex, vector< Node* >& toBeAnalyzed )
 {
     node._analyzed = true;
+    node._cacheIndex = cacheIndex;
+    ++surfaceCache[ cacheIndex ];
 
-    if( !node._water )
-        return;
-
-    ++surface;
-
-    auto findLakeNeighbour = [ &toBeAnalyzed ] ( Coord&& coord )
+    auto findLakeAtNode = [ &toBeAnalyzed ] ( Coord&& coord )
     {
         if( checkBounds( coord ) )
         {
@@ -114,20 +100,28 @@ findLakeFromHere( Node& node, uint32_t& surface, vector< Node* >& toBeAnalyzed )
         }
     };
     
-    findLakeNeighbour( Coord( node._coord._X + 1, node._coord._Y ) );
-    findLakeNeighbour( Coord( node._coord._X - 1, node._coord._Y ) );
-    findLakeNeighbour( Coord( node._coord._X, node._coord._Y + 1 ) );
-    findLakeNeighbour( Coord( node._coord._X, node._coord._Y - 1 ) );
+    findLakeAtNode( Coord( node._coord._X + 1, node._coord._Y ) );
+    findLakeAtNode( Coord( node._coord._X - 1, node._coord._Y ) );
+    findLakeAtNode( Coord( node._coord._X, node._coord._Y + 1 ) );
+    findLakeAtNode( Coord( node._coord._X, node._coord._Y - 1 ) );
 }
 
 uint32_t
 findLake( Coord const& coord )
 {
     auto& root = getNode( coord );
+    if( !root._water )
+        return 0;
+
+    if( root._analyzed )
+        return surfaceCache[ root._cacheIndex ];
+
+    surfaceCache.push_back( 0 );
+
     auto toBeAnalyzed = vector< Node* >{ &root };
     toBeAnalyzed.reserve( 2000 );
 
-    auto surface = uint32_t{ 0 };
+    auto cacheIndex = surfaceCache.size() - 1;
     auto head = begin( toBeAnalyzed );
 
     for( int index = 0; ; ++index )
@@ -136,10 +130,10 @@ findLake( Coord const& coord )
         if( head == end( toBeAnalyzed ) )
             break;
 
-        findLakeFromHere( **head, surface, toBeAnalyzed );
+        findLakeAroundNode( **head, cacheIndex, toBeAnalyzed );
     }
 
-    return surface;
+    return surfaceCache[ root._cacheIndex ];
 }
 
 int
@@ -150,11 +144,16 @@ main()
     cin >> L; cin.ignore();
     int H;
     cin >> H; cin.ignore();
+
+    rows.reserve( H );
+    string row;
+    row.reserve( L );
+
     for( int i = 0; i < H; i++ ) {
-        string row;
         cin >> row; cin.ignore();
         rows.push_back( row );
     }
+
     int N;
     cin >> N; cin.ignore();
 
@@ -170,10 +169,9 @@ main()
     initNodes( L, H );
 
     for( auto const& coord : coords )
-    {
-        resetNodes( L, H );
-        cout << findLake( coord ) << endl;
-    }
+        cout << findLake( coord ) << "\n";
+
+    cout << endl;
 
     return 0;
 }
