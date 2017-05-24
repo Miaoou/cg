@@ -12,10 +12,11 @@ namespace cg { namespace fwk { namespace graph {
 
 class NodeView {
 public:
+    NodeView() = default;
     NodeView( uint32_t const id ) : _id{ id } {
     }
 
-    uint32_t const _id;
+    uint32_t _id = 0;
 };
 
 bool
@@ -25,10 +26,11 @@ operator==( NodeView const& n1, NodeView const& n2 ) {
 
 class EdgeView {
 public:
+    EdgeView() = default;
     EdgeView( uint32_t const id ) : _id{ id } {
     }
 
-    uint32_t const _id;
+    uint32_t _id = 0;
 };
 
 class Node {
@@ -118,6 +120,14 @@ public:
         for( auto const& e : _nodes[ n._id ].get_edges() ) {
             print_edge( e );
         }
+    }
+
+    Node const& get_node( NodeView const& n ) const {
+        return _nodes[ n._id ];
+    }
+
+    Edge const& get_edge( EdgeView const& e ) const {
+        return _edges[ e._id ];
     }
 
 private:
