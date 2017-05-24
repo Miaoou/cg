@@ -1,61 +1,45 @@
 // SuffixTrie.cc
 
-#include <vector>
-#include <iostream>
-#include <algorithm>
+#include "../graph/graph.h"
 
-class NodeTrie {
+#include <unordered_map>
+
+class Trie {
 public:
-    NodeTrie() = default;
-    NodeTrie( char c ) : _c( c ) {
-    }
-    ~NodeTrie() = default;
+    Trie() = default;
+    ~Trie() = default;
 
-    void setParent( NodeTrie* parent ) const {
-        _parent = parent;
+    void init() {
+        auto root = _graph.new_node();
     }
 
-    void addChild( NodeTrie* child ) {
-        _children.push_back( child );
-    }
-
-    std::vector< NodeTrie* > const& getChildren() const {
-        return _children;
+    void add_string( std::string const& s ) {
+        for( auto it = std::end( s ) - 1; it != std::begin( s ); --it ) {
+            add_suffix( std::string( it, std::end( s ) ) );
+        }
+        add_suffix( s );
     }
     
-    char const _c = '\0';
-
 private:
-    NodeTrie* _parent = nullptr;
-    std::vector< NodeTrie* > _children;
+    void add_suffix( std::string const& s ) {
+        std::cout << s << "\n";
+    }
+
+    cg::fwk::graph::Graph _graph;
+    std::unordered_map< uint32_t, char > _trie_values;
 };
 
-void
-addStringToTrie( std::string const& s, std::vector< std::unique_ptr< NodeTrie > >& trie ) {
-    using std::foreach; using std::rbegin; using std::rend; using std::string;
+int
+main() {
+    std::string const s1{ "AGATTA" };
+    std::string const s2{ "GATTACA" };
+    std::string const s3{ "TACAGA" };
 
-    NodeTrie* current = trie.front();
+    Trie trie;
+    trie.add_string( s1 );
+    trie.add_string( s2 );
+    trie.add_string( s3 );
 
-    foreach( rbegin( s ), rend( s ), [ &root ] ( string::value_type c ) {
-        if( current->_c != c ) {
-            auto child = std::find_if( begin( p->getChildren() ), end( p->getChildren() ), [ =c ] ( char child_c ) {
-                return child_c == c;
-            } );
-
-            if( child == end( p->getChildren() ) ) {
-                trie.emplace_back( c );
-                inserted = true;
-            }
-            else {
-                            
-            }
-        }
-    } );
-}
-
-int main() {
-    std::vector< std::unique_ptr< NodeTrie > > trie{ std::make_unique< NodeTrie >( '\0' ) };
-    addStringToTrie( "AGATTA", trie );
-
+    
     return 0;
 }
