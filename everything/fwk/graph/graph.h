@@ -24,14 +24,35 @@ operator==( NodeView const& n1, NodeView const& n2 ) {
     return n1._id == n2._id;
 }
 
+bool
+operator!=( NodeView const& n1, NodeView const& n2 ) {
+    return !( n1 == n2 );
+}
+
 class EdgeView {
 public:
     EdgeView() = default;
+    EdgeView( EdgeView const& e ) : _id{ e._id } {}
+    EdgeView& operator=( EdgeView const& e ) {
+        _id = e._id;
+        return *this;
+    }
+
     EdgeView( uint32_t const id ) : _id{ id } {
     }
 
     uint32_t _id = 0;
 };
+
+bool
+operator==( EdgeView const& e1, EdgeView const& e2 ) {
+    return e1._id == e2._id;
+}
+
+bool
+operator!=( EdgeView const& e1, EdgeView const& e2 ) {
+    return !( e1 == e2 );
+}
 
 class Node {
 public:
