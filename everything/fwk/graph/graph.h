@@ -196,6 +196,25 @@ public:
         }
     }
 
+    template< typename NodeHandler_t, typename EdgeHandler_t >
+    void BFS( NodeView const& root, NodeHandler_t&& node_handler, EdgeHandler_t&& edge_handler ) const {
+        std::queue< NodeView > q;
+        q.push( root );
+
+        while( !q.empty() ) {
+            auto const node = q.front();
+            q.pop();
+
+            auto const edges = get_oriented_edges( node );
+            for( auto const& e : edges ) {
+                edge_handler( e, std::forward< EdgeHandler_t >( edge_handler ) );
+                q.push( get_edge( e )._end );
+            }
+
+            node_handler( node, std::forward< NodeHandler_t >( node_handler ) );
+        }
+    }
+
 private:
     std::vector< Node > _nodes;
     std::vector< Edge > _edges;

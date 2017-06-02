@@ -3,6 +3,7 @@
 #include "../graph/graph.h"
 
 #include <unordered_map>
+#include <unordered_set>
 
 class Trie {
 public:
@@ -29,7 +30,13 @@ public:
    
     void print() {
         auto edge_printer = [ this ]( cg::fwk::graph::EdgeView const& e ) {
-            std::cout << "  e" << e._id << " (" << _edge_values[ e._id ] << ") -> n" << _graph.get_edge( e )._end._id << "\n";
+            std::cout << "  e" << e._id << " (" << _edge_values[ e._id ] << ") -> n" << _graph.get_edge( e )._end._id;
+            std::cout << " owned by: ";
+
+            for( auto const& owners : _edge_owners[ e._id ] ) {
+                std::cout << "s" << owners << ", ";
+            }
+            std::cout << "\n";
         };
 
         auto node_printer = [ this ]( cg::fwk::graph::NodeView const& n ) {
@@ -53,6 +60,7 @@ private:
         _strings_node_ends.back().push_back( n );
     }
 
+    /*
     void remove_string_node_end( cg::fwk::graph::NodeView const& n ) {
         auto& curr_string_nodes = _strings_node_ends.back();
         curr_string_nodes.erase(
@@ -62,12 +70,13 @@ private:
                     n ),
                 std::end( curr_string_nodes ) );
     }
-
+    */
     void add_suffix( std::string const& s ) {
         std::cout << "\tAdding suffix " << s << "...\n";
 
         auto curr_node = _root;
         auto last_edge = cg::fwk::graph::EdgeView( 0 );
+        auto const curr_string_idx = _strings_node_ends.size();
 
         for( auto c : s ) {
             auto const& curr_edges = _graph.get_node( curr_node ).get_edges();
@@ -90,17 +99,23 @@ private:
                 curr_node = found_edge._end;
                 last_edge = cg::fwk::graph::EdgeView( found_edge._id );
             }
+
+            _edge_owners[ last_edge._id ].insert( curr_string_idx );
         }
 
         auto end_suffix = _graph.new_node();
         auto e = _graph.new_edge( curr_node, end_suffix );
         _edge_values[ e._id ] = '$';
         add_string_node_end( end_suffix );
+
+        _edge_owners[ e._id ].insert( curr_string_idx );
     }
 
     cg::fwk::graph::Graph _graph;
     cg::fwk::graph::NodeView _root;
     std::unordered_map< uint32_t, char > _edge_values;
+    // < edge, < strings > >
+    std::unordered_map< uint32_t, std::unordered_set< uint32_t > > _edge_owners;
     std::vector< std::vector< cg::fwk::graph::NodeView > > _strings_node_ends;
 };
 
@@ -114,7 +129,7 @@ main() {
     trie.init();
     trie.add_string( s1 );
     trie.add_string( s2 );
-    //trie.add_string( s3 );
+    trie.add_string( s3 );
 
     trie.print(); 
     return 0;
