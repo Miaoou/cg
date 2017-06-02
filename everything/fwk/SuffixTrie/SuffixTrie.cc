@@ -28,9 +28,23 @@ public:
     }
    
     void print() {
-        _graph.print_neighbours( _root );
-        for( auto const& pair : _edge_values ) {
-            std::cout << "e" << pair.first << " : " << pair.second << "\n";
+        auto edge_printer = [ this ]( cg::fwk::graph::EdgeView const& e ) {
+            std::cout << "  e" << e._id << " (" << _edge_values[ e._id ] << ") -> n" << _graph.get_edge( e )._end._id << "\n";
+        };
+
+        auto node_printer = [ this ]( cg::fwk::graph::NodeView const& n ) {
+            std::cout << "n" << n._id << ": \n";
+        };
+
+        _graph.print_oriented( _root, edge_printer, node_printer );
+
+        uint32_t idx = 1;
+        for( auto const& node_ends : _strings_node_ends ) {
+            std::cout << "s" << idx++ << ": ";
+            for( auto const& nodes : node_ends ) {
+                std::cout << "n" << nodes._id << ", ";
+            }
+            std::cout << "\n";
         }
     }
 
@@ -70,17 +84,18 @@ private:
                 _edge_values[ e._id ] = c;
                 curr_node = end;
                 last_edge = e;
-
-                add_string_node_end( end );
             }
             else {
                 auto const found_edge = _graph.get_edge( *it );
                 curr_node = found_edge._end;
                 last_edge = cg::fwk::graph::EdgeView( found_edge._id );
-
-                remove_string_node_end( curr_node );
             }
         }
+
+        auto end_suffix = _graph.new_node();
+        auto e = _graph.new_edge( curr_node, end_suffix );
+        _edge_values[ e._id ] = '$';
+        add_string_node_end( end_suffix );
     }
 
     cg::fwk::graph::Graph _graph;
@@ -98,7 +113,7 @@ main() {
     Trie trie;
     trie.init();
     trie.add_string( s1 );
-    //trie.add_string( s2 );
+    trie.add_string( s2 );
     //trie.add_string( s3 );
 
     trie.print(); 
