@@ -15,10 +15,11 @@ namespace cg { namespace fwk { namespace graph {
 class NodeView {
 public:
     NodeView() = default;
-    NodeView( uint32_t const id ) : _id{ id } {
+    NodeView& operator=( NodeView const& ) = default;
+    NodeView( std::size_t const id ) : _id{ id } {
     }
 
-    uint32_t _id = 0;
+    std::size_t _id = 0;
 };
 
 bool
@@ -31,19 +32,16 @@ operator!=( NodeView const& n1, NodeView const& n2 ) {
     return !( n1 == n2 );
 }
 
+
 class EdgeView {
 public:
     EdgeView() = default;
-    EdgeView( EdgeView const& e ) : _id{ e._id } {}
-    EdgeView& operator=( EdgeView const& e ) {
-        _id = e._id;
-        return *this;
+    EdgeView& operator=(EdgeView const& e) = default;
+
+    EdgeView( std::size_t const id ) : _id{ id } {
     }
 
-    EdgeView( uint32_t const id ) : _id{ id } {
-    }
-
-    uint32_t _id = 0;
+    std::size_t _id = 0;
 };
 
 bool
@@ -56,16 +54,17 @@ operator!=( EdgeView const& e1, EdgeView const& e2 ) {
     return !( e1 == e2 );
 }
 
+
 class Node {
 public:
     friend std::ostream& operator<<( std::ostream& os, Node const& e );
     
-    Node( uint32_t const id ) : _id{ id } {
+    Node( std::size_t const id ) : _id{ id } {
     }
     
-    uint32_t const _id;
+    std::size_t const _id;
 
-    void add_edge( uint32_t id ) {
+    void add_edge( std::size_t id ) {
         _edges.emplace_back( id );
     }
 
@@ -88,17 +87,18 @@ operator<<( std::ostream& os, Node const& n ) {
     return os;
 }
 
+
 class Edge {
 public:
     friend std::ostream& operator<<( std::ostream& os, Edge const& e  );
 
-    Edge( uint32_t const id, NodeView start, NodeView end )
+    Edge( std::size_t const id, NodeView start, NodeView end )
         : _id{ id }
         , _start{ start }
         , _end{ end } {
     }
     
-    uint32_t const _id;
+    std::size_t const _id;
     NodeView const _start;
     NodeView const _end;
 };
@@ -109,6 +109,7 @@ operator<<( std::ostream& os, Edge const& e ) {
     return os;
 }
 
+
 class Graph {
 public:
     Graph() = default;
@@ -118,7 +119,7 @@ public:
         auto const id = _nodes.size();
         _nodes.emplace_back( id );
 
-        return NodeView( id );
+        return id;
     }
 
     EdgeView new_edge( NodeView n1, NodeView n2 ) {
@@ -134,15 +135,6 @@ public:
         std::cout << _nodes[ n._id ];
     }
     
-    template< typename EdgePrinter_t, typename NodePrinter_t >
-    void print_oriented_node( NodeView const& n, EdgePrinter_t&& edge_printer, NodePrinter_t&& node_printer ) const {
-        if( !get_oriented_edges( n ).empty() ) {
-            node_printer( n );
-            print_edges( n, true, std::forward< EdgePrinter_t >( edge_printer ) );
-            std::cout << "\n";
-        }
-    }
-
     template< typename EdgePrinter_t >
     void print_edge( EdgeView const& e, EdgePrinter_t&& edge_printer ) const {
         edge_printer( e );
@@ -178,24 +170,6 @@ public:
         return oe;
     }
 
-    template< typename EdgePrinter_t, typename NodePrinter_t >
-    void print_oriented( NodeView const& root, EdgePrinter_t&& edge_printer, NodePrinter_t&& node_printer ) const {
-        std::queue< NodeView > nodes_to_print;
-        nodes_to_print.push( root );
-
-        while( !nodes_to_print.empty() ) {
-            auto const node = nodes_to_print.front();
-            nodes_to_print.pop();
-
-            auto const edges = get_oriented_edges( node );
-            for( auto const& e : edges ) {
-                nodes_to_print.push( get_edge( e )._end );
-            }
-
-            print_oriented_node( node, std::forward< EdgePrinter_t >( edge_printer ), std::forward< NodePrinter_t >( node_printer ) );
-        }
-    }
-
     template< typename NodeHandler_t, typename EdgeHandler_t >
     void BFS( NodeView const& root, NodeHandler_t&& node_handler, EdgeHandler_t&& edge_handler ) const {
         std::queue< NodeView > q;
@@ -219,6 +193,35 @@ private:
     std::vector< Node > _nodes;
     std::vector< Edge > _edges;
 };
+
+template< typename EdgePrinter_t, typename NodePrinter_t >
+void
+print_oriented_node(Graph const& g, NodeView const& n, EdgePrinter_t&& edge_printer, NodePrinter_t&& node_printer) {
+    if (!g.get_oriented_edges(n).empty()) {
+        node_printer(n);
+        g.print_edges(n, true, std::forward< EdgePrinter_t >(edge_printer));
+        std::cout << "\n";
+    }
+}
+
+template< typename EdgePrinter_t, typename NodePrinter_t >
+void
+print_oriented(Graph const& g, NodeView const& root, EdgePrinter_t&& edge_printer, NodePrinter_t&& node_printer) {
+    std::queue< NodeView > nodes_to_print;
+    nodes_to_print.push(root);
+
+    while (!nodes_to_print.empty()) {
+        auto const node = nodes_to_print.front();
+        nodes_to_print.pop();
+
+        auto const edges = g.get_oriented_edges(node);
+        for (auto const& e : edges) {
+            nodes_to_print.push(g.get_edge(e)._end);
+        }
+
+        print_oriented_node(g, node, std::forward< EdgePrinter_t >(edge_printer), std::forward< NodePrinter_t >(node_printer));
+    }
+}
 
 }}} //namespace cg::fwk::graph
 
