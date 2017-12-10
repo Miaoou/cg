@@ -28,7 +28,7 @@ public:
         add_suffix( s );
     }
 
-    void print() {
+    void print() const {
         auto edge_printer = [this](cg::fwk::graph::EdgeView const& e) {
             std::cout << "  e" << e._id << " (" << _edge_values.at(e._id) << ") -> n" << _graph.get_edge(e)._end._id;
             std::cout << " owned by: ";
