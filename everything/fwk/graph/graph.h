@@ -130,24 +130,7 @@ public:
         _nodes[ n2._id ].add_edge( id );
         return EdgeView( id );
     }
-
-    void print_node( NodeView const& n ) const {
-        std::cout << _nodes[ n._id ];
-    }
-    
-    template< typename EdgePrinter_t >
-    void print_edge( EdgeView const& e, EdgePrinter_t&& edge_printer ) const {
-        edge_printer( e );
-    }
-
-    template< typename EdgePrinter_t >
-    void print_edges( NodeView const& n, bool oriented, EdgePrinter_t&& edge_printer ) const {
-        auto const edges = oriented ? get_oriented_edges( n ) : get_node( n ).get_edges();
-        for( auto const& e : edges ) {
-            print_edge( e, std::forward< EdgePrinter_t >( edge_printer ) );
-        }
-    }
-
+ 
     Node const& get_node( NodeView const& n ) const {
         return _nodes[ n._id ];
     }
@@ -155,51 +138,59 @@ public:
     Edge const& get_edge( EdgeView const& e ) const {
         return _edges[ e._id ];
     }
-
-    std::vector< EdgeView > get_oriented_edges( NodeView const& nv ) const {
-        std::vector< EdgeView > oe;
-        auto const edges = get_node( nv ).get_edges();
-        std::copy_if(
-                std::cbegin( edges ),
-                std::cend( edges ),
-                std::back_inserter( oe ),
-                [ this, &nv ]( EdgeView const& e ) {
-                    return get_edge( e )._start == nv;
-                }
-        );
-        return oe;
-    }
-
-    template< typename NodeHandler_t, typename EdgeHandler_t >
-    void BFS( NodeView const& root, NodeHandler_t&& node_handler, EdgeHandler_t&& edge_handler ) const {
-        std::queue< NodeView > q;
-        q.push( root );
-
-        while( !q.empty() ) {
-            auto const node = q.front();
-            q.pop();
-
-            auto const edges = get_oriented_edges( node );
-            for( auto const& e : edges ) {
-                edge_handler( e, std::forward< EdgeHandler_t >( edge_handler ) );
-                q.push( get_edge( e )._end );
-            }
-
-            node_handler( node, std::forward< NodeHandler_t >( node_handler ) );
-        }
-    }
-
+        
 private:
     std::vector< Node > _nodes;
     std::vector< Edge > _edges;
 };
 
+std::vector< EdgeView > get_oriented_edges(Graph const& g, NodeView const& nv) {
+    std::vector< EdgeView > oe;
+    auto const edges = g.get_node(nv).get_edges();
+    std::copy_if(
+        std::cbegin(edges),
+        std::cend(edges),
+        std::back_inserter(oe),
+        [&g, &nv](EdgeView const& e) {
+            return g.get_edge(e)._start == nv;
+        }
+    );
+    return oe;
+}
+
+template< typename NodeHandler_t, typename EdgeHandler_t >
+void BFS(Graph const& g, NodeView const& root, NodeHandler_t&& node_handler, EdgeHandler_t&& edge_handler) {
+    std::queue< NodeView > q;
+    q.push(root);
+
+    while (!q.empty()) {
+        auto const node = q.front();
+        q.pop();
+
+        auto const edges = g.get_oriented_edges(node);
+        for (auto const& e : edges) {
+            edge_handler(e, std::forward< EdgeHandler_t >(edge_handler));
+            q.push(get_edge(e)._end);
+        }
+
+        node_handler(node, std::forward< NodeHandler_t >(node_handler));
+    }
+}
+
+template< typename EdgePrinter_t >
+void print_edges(Graph const& g, NodeView const& n, bool oriented, EdgePrinter_t&& edge_printer) {
+    auto const edges = oriented ? get_oriented_edges(g, n) : g.get_node(n).get_edges();
+    for (auto const& e : edges) {
+        edge_printer(e);
+    }
+}
+
 template< typename EdgePrinter_t, typename NodePrinter_t >
 void
 print_oriented_node(Graph const& g, NodeView const& n, EdgePrinter_t&& edge_printer, NodePrinter_t&& node_printer) {
-    if (!g.get_oriented_edges(n).empty()) {
+    if (!get_oriented_edges(g, n).empty()) {
         node_printer(n);
-        g.print_edges(n, true, std::forward< EdgePrinter_t >(edge_printer));
+        print_edges(g, n, true, std::forward< EdgePrinter_t >(edge_printer));
         std::cout << "\n";
     }
 }
@@ -214,7 +205,7 @@ print_oriented(Graph const& g, NodeView const& root, EdgePrinter_t&& edge_printe
         auto const node = nodes_to_print.front();
         nodes_to_print.pop();
 
-        auto const edges = g.get_oriented_edges(node);
+        auto const edges = get_oriented_edges(g, node);
         for (auto const& e : edges) {
             nodes_to_print.push(g.get_edge(e)._end);
         }
