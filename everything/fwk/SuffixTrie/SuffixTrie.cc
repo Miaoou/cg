@@ -1,5 +1,19 @@
 // SuffixTrie.cc
 
+// Copyright 2016-2017 Brice Gagnage
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "../graph/graph.h"
 
 #include <unordered_map>
@@ -29,8 +43,8 @@ public:
     }
 
     void print() const {
-        auto edge_printer = [this](cg::fwk::graph::EdgeView const& e) {
-            std::cout << "  e" << e._id << " (" << _edge_values.at(e._id) << ") -> n" << _graph.get_edge(e)._end._id;
+        auto edge_printer = [this](cg::fwk::graph::Edge const& e) {
+            std::cout << "  e" << e._id << " (" << _edge_values.at(e._id) << ") -> n" << e._end._id;
             std::cout << " owned by: ";
 
             for (auto const& owners : _edge_owners.at(e._id)) {
@@ -39,7 +53,7 @@ public:
             std::cout << "\n";
         };
 
-        auto node_printer = [this](cg::fwk::graph::NodeView const& n) {
+        auto node_printer = [this](cg::fwk::graph::Node const& n) {
             std::cout << "n" << n._id << ": \n";
         };
 
@@ -119,19 +133,19 @@ private:
     std::vector< std::vector< cg::fwk::graph::NodeView > > _strings_node_ends;
 };
 
-int
-main() {
-    std::string const s1{ "AGATTA" };
-    std::string const s2{ "GATTACA" };
-    std::string const s3{ "TACAGA" };
-
-    Trie trie;
-    trie.init();
-    trie.add_string( s1 );
-    trie.add_string( s2 );
-    trie.add_string( s3 );
-
-    trie.print();
-    system("pause");
-    return 0;
-}
+//int
+//main() {
+//    std::string const s1{ "AGATTA" };
+//    std::string const s2{ "GATTACA" };
+//    std::string const s3{ "TACAGA" };
+//
+//    Trie trie;
+//    trie.init();
+//    trie.add_string( s1 );
+//    trie.add_string( s2 );
+//    trie.add_string( s3 );
+//
+//    trie.print();
+//    system("pause");
+//    return 0;
+//}
