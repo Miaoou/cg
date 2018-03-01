@@ -1,0 +1,28 @@
+---
+# default
+BasedOnStyle: LLVM
+IndentWidth: 4
+---
+Language: Cpp
+ColumnLimit: 0
+DerivePointerAlignment: false
+PointerAlignment: Left
+SpacesInParentheses: true
+SpacesInSquareBrackets: true
+SpacesInCStyleCastParentheses: true
+AlwaysBreakTemplateDeclarations: true
+SpaceAfterTemplateKeyword: false
+SpacesInAngles: true
+SpaceBeforeParens: Never
+SpaceBeforeAssignmentOperators: true
+AlwaysBreakAfterReturnType: None
+BreakBeforeBraces: Custom
+BraceWrapping:
+	BeforeElse: true
+
+#TODO options dispo pour le futur clang 6
+#BreakConstructorInitializers: BeforeComma
+#BreakBeforeInheritanceComma: true
+#CompactNamespaces: true
+#SortUsingDeclarations: true
+---
