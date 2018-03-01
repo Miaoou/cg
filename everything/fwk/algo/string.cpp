@@ -29,9 +29,8 @@ auto LCSub( std::string const& s1, std::string const& s2 ) {
                 if( L[ j ][ i ] > z ) {
                     z = L[ j ][ i ];
                     longest_subs.clear();
-                    longest_subs.emplace_back( std::begin( s1 ) +    i - z,
-                                                                          std::begin( s1 ) + i
-                                                             );
+                    longest_subs.emplace_back( std::begin( s1 ) + i - z,
+                                               std::begin( s1 ) + i );
                 }
                 else if( L[ j ][ i ] == z ) {
                     longest_subs.emplace_back(
@@ -48,8 +47,7 @@ auto LCSub( std::string const& s1, std::string const& s2 ) {
 } // namespace cg::fwk::str
 
 int main() {
-    auto subs = cg::fwk::str::LCSub("maowplouf", "plouflechat");
+    auto subs = cg::fwk::str::LCSub( "maowplouf", "plouflechat" );
     for( auto const& sub : subs )
         std::cout << sub.c_str() << "\n";
 }
-
