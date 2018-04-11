@@ -204,6 +204,32 @@ BFS( Graph const& g, NodeView const& root, EdgeHandler_t&& edge_handler, NodeHan
     return res;
 }
 
+/*
+void DFS( tree_t& tree, tree_t::reference root, leaves_t& leaves ) {
+    unordered_set< int > visited{ root.first };    
+    stack< tree_t::value_type > q;
+    q.push( root );
+    
+    while( !q.empty() ) {
+        auto next = q.top();        
+        auto child_it = find_if( begin( next.second ), end( next.second ),
+            [&]( int child ) {
+                return visited.find( child ) == end( visited );
+            } );
+            
+        if( child_it != end( next.second ) ) {
+            q.push( *tree.find( *child_it ) );
+            visited.insert( *child_it );
+            
+            if( tree[ *child_it ].size() == 1 )
+                leaves.push_back( *child_it );
+        }
+        else
+            q.pop();
+    }  
+    }
+*/
+
 template< typename EdgePrinter_t >
 void
 print_edges( Graph const& g, NodeView const& n, bool oriented, EdgePrinter_t&& edge_printer ) {
